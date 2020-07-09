@@ -57,14 +57,23 @@ console.log(bruh instanceof Date)   // true
 console.log(bruh instanceof Object) // true
 ```
 
+...and on top of that the language has all kinds of arbitrary "types" that
+need to be checked. For example, the only way to tell if a number is natural
+is with a function:
+
+```javascript
+const isNaturalNumber = n =>
+  Number.isInteger(n) && n >= 0
+```
+
 ## Proposal
-So our solution to pattern matching should incorporate both destructuring and
-`instanceof` in order to be maximally useful. It can be understood as just a
-newer `switch` statement that allows matching if the value...
+So our solution for pattern matching should incorporate both destructuring and
+arbitrary matching in order to be maximally useful. It can be understood as
+just a newer `switch` statement that allows matching if the value...
 
 * ...is strictly equal (`===`) to a case, like a normal `switch` would.
 * ...can be destructured by a case
-* ...is an `instanceof` a case
+* ...fits some arbitrary chosen criteria
 
 Finally, our solution must abandon the current `switch` syntax in order to be
 more consistent with the syntax of all of the other statements.
@@ -72,12 +81,8 @@ more consistent with the syntax of all of the other statements.
 Here is roughly what its syntax looks like:
 
 ```
-switch* (<expression>) {
-  case (<expression>) <block>
-  ...
-  case (<destructuring>) <block>
-  ...
-  instanceof (<constructor>) <block>
+switch* (<expression> [; <function>]) {
+  case ([<expression> | <destructuring>]...) <block>
   ...
   default <block>
 }
@@ -108,6 +113,64 @@ switch (1) {
 ```
 
 But of course - the most common mistake is to forget to write all of the `break`'s.
+Now, rather than fall-through, you can match one of multiple patterns like so:
+
+```javascript
+const userInput = "hello"
+
+switch* (userInput) {
+  case ("hi", "hello", "hey")
+    console.log(`Oh, ${userInput}!`)
+  
+  case ("bye", "goodbye", "see ya")
+    console.log("Have a good day!")
+
+  default
+    console.log("Sorry, I don't understand that much...")
+}
+```
+
+### Optional Custom Match Function
+Normally, a `case` clause only matches using strict equality or a destructuring
+assignment. When matching another expression (when not destructuring), the
+matching function is equivalent to `(a, b) => a === b`. This can be too rigid
+for many cases in pattern matching, so an optional custom match function has is
+supported. This is especially useful for ranges or custom logic:
+
+```javascript
+// Contrived example that tests is two numbers are coprime
+const gcd = (a, b) =>
+  b == 0 ? Math.abs(a)
+         : gcd(b, a % b)
+
+const isCoPrimeTo = (a, b) =>
+  gcd(a, b) === 1
+
+switch* (14; isCoPrimeTo) {
+  case (2, 4, 6, 8)
+    console.log("This shouldn't happen")
+
+  case (15)
+    console.log("This should happen")
+}
+
+// Arbitrary pattern matching
+const isLessThan = (a, b) => a < b
+
+switch* (42; isLessThan) {
+  case (0)
+    console.log("Negative")
+
+  case (10)
+    console.log("Single Digits")
+  
+  case (50)
+    console.log("Under 50")
+
+  default
+    console.log("50 or more?")
+}
+```
 
 ### Blocks
 A common pattern in ECMAScript is to use blocks:
@@ -174,22 +237,24 @@ const map = (f, iterable) => {
 
 Matching sum types (though undeclared and not compile-time checked):
 ```javascript
+const isInstanceOf = (a, b) => a instanceof b
+
 const bTreeSize = tree => {
-  switch* (tree) {
-    instanceof (Leaf)
+  switch* (tree; isInstanceOf) {
+    case (Leaf)
       return 1
 
-    instanceof (Node)
+    case (Node)
       return bTreeSize(Node.left) + bTreeSize(Node.right)
   }
 }
 
 const apply = (f, maybeSomething) => {
-  switch* (maybeSomething) {
-    instanceof (Just)
+  switch* (maybeSomething; isInstanceOf) {
+    case (Just)
       return f(maybeSomething.value)
 
-    instanceof (Nothing)
+    case (Nothing)
       return maybeSomething
 
     default
