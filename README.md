@@ -1,5 +1,5 @@
 # Proposed New Approach for Pattern Matching in ECMAScript
-Stage 0. Championed by Daniel Ethridge ([@wlib](https://git.io/de)).
+Author: Daniel Ethridge ([@wlib](https://git.io/de)).
 ## Introduction
 The entire purpose of pattern matching is to branch logic. We currently use the
 `if` statement and the `switch` statement to do this. The issue is that neither
