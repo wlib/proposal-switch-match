@@ -72,8 +72,8 @@ arbitrary matching in order to be maximally useful. It can be understood as
 just a newer `switch` statement that allows matching if the value...
 
 * ...is strictly equal (`===`) to a case, like a normal `switch` would.
-* ...can be destructured by a case
-* ...fits some arbitrary chosen criteria
+* ...can be destructured by a case.
+* ...fits some arbitrarily chosen criteria.
 
 Finally, our solution must abandon the current `switch` syntax in order to be
 more consistent with the syntax of all of the other statements.
@@ -110,6 +110,16 @@ switch (1) {
 }
 // default
 // 2
+
+switch (1) {
+  case 0: console.log(0)
+  case 1: console.log(1)
+  default: console.log("default")
+  case 2: console.log(2)
+}
+// 1
+// default
+// 2
 ```
 
 But of course - the most common mistake is to forget to write all of the `break`'s.
@@ -134,7 +144,7 @@ switch* (userInput) {
 Normally, a `case` clause only matches using strict equality or a destructuring
 assignment. When matching another expression (when not destructuring), the
 matching function is equivalent to `(a, b) => a === b`. This can be too rigid
-for many cases in pattern matching, so an optional custom match function has is
+for many cases in pattern matching, so an optional custom match function is
 supported. This is especially useful for ranges or custom logic:
 
 ```javascript
@@ -157,7 +167,7 @@ switch* (14; isCoPrimeTo) {
 // Arbitrary pattern matching
 const isLessThan = (a, b) => a < b
 
-switch* (42; isLessThan) {
+switch* (someNumber; isLessThan) {
   case (0)
     console.log("Negative")
 
@@ -213,8 +223,8 @@ lambda = argument =>
   result(argument)
 ```
 
-Now, the clauses within `switch*` can do the same, making them much more
-consistent with intuition for how pattern matching *should* work:
+Now, the clauses within `switch*` behave the same way, making them much
+more consistent with intuition for how pattern matching *should* work:
 
 ```javascript
 const map = (f, iterable) => {
@@ -236,6 +246,7 @@ const map = (f, iterable) => {
 ## More Examples
 
 Matching sum types (though undeclared and not compile-time checked):
+
 ```javascript
 const isInstanceOf = (a, b) => a instanceof b
 
@@ -259,6 +270,26 @@ const apply = (f, maybeSomething) => {
 
     default
       throw new TypeError(maybeSomething, "needs to be a Maybe type")
+  }
+}
+```
+
+This enables really creative pattern matching "types/sort of typeclasses":
+
+```javascript
+class Functor {
+  static [Symbol.hasInstance](possibleFunctor) {
+    return typeof possibleFunctor.map === "function"
+  }
+}
+
+const myArray = [1, 2, 3, 4, 5]
+const isInstanceOf = (a, b) => a instanceof b
+
+switch* (myArray; isInstanceOf) {
+  case (Functor) {
+    console.log("This will match, because arrays are functors")
+    console.log( myArray.map(n => n * 2) )
   }
 }
 ```
@@ -291,7 +322,7 @@ This can be resolved by treating anything that can be parsed as a
 destructuring assignment as a destructuring assignment. This includes
 all `{}` and `[]`, but excludes bare identifiers and any other expressions.
 So every clause except the last one is a destructuring match, while the last
-clause matches the expression `[1]`.
+clause matches the variable `stuff` itself.
 
 Essentially, just remember that `case` clauses take identifiers if you need to
 match an object or iterable.
